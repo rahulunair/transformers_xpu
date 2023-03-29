@@ -34,9 +34,9 @@ from transformers.testing_utils import (
     require_bitsandbytes,
     require_fairscale,
     require_torch,
-    require_torch_gpu,
-    require_torch_multi_gpu,
-    require_torch_non_multi_gpu,
+    require_torch_cuda,
+    require_torch_multi_cuda,
+    require_torch_non_multi_cuda,
     slow,
 )
 from transformers.trainer_callback import TrainerState
@@ -91,44 +91,44 @@ class TestTrainerExt(TestCasePlus):
             assert isinstance(last_step_stats["eval_bleu"], float)
             assert not math.isnan(float(last_step_stats["eval_loss"])), "eval_loss must not be `nan`"
 
-    @require_torch_non_multi_gpu
+    @require_torch_non_multi_cuda
     def test_run_seq2seq_no_dist(self):
         self.run_seq2seq_quick()
 
     # verify that the trainer can handle non-distributed with n_gpu > 1
-    @require_torch_multi_gpu
+    @require_torch_multi_cuda
     def test_run_seq2seq_dp(self):
         self.run_seq2seq_quick(distributed=False)
 
     # verify that the trainer can handle distributed with n_gpu > 1
-    @require_torch_multi_gpu
+    @require_torch_multi_cuda
     def test_run_seq2seq_ddp(self):
         self.run_seq2seq_quick(distributed=True)
 
     # test --sharded_ddp w/o --fp16
     @unittest.skip("Requires an update of the env running those tests")
-    @require_torch_multi_gpu
+    @require_torch_multi_cuda
     @require_fairscale
     def test_run_seq2seq_sharded_ddp(self):
         self.run_seq2seq_quick(distributed=True, extra_args_str="--sharded_ddp simple")
 
     # test --sharded_ddp w/ --fp16
     @unittest.skip("Requires an update of the env running those tests")
-    @require_torch_multi_gpu
+    @require_torch_multi_cuda
     @require_fairscale
     def test_run_seq2seq_sharded_ddp_fp16(self):
         self.run_seq2seq_quick(distributed=True, extra_args_str="--sharded_ddp simple --fp16")
 
     # test --sharded_ddp zero_dp_2 w/o --fp16
     @unittest.skip("Requires an update of the env running those tests")
-    @require_torch_multi_gpu
+    @require_torch_multi_cuda
     @require_fairscale
     def test_run_seq2seq_fully_sharded_ddp(self):
         self.run_seq2seq_quick(distributed=True, extra_args_str="--sharded_ddp zero_dp_2", predict_with_generate=False)
 
     # test --sharded_ddp zero_dp_2 w/ --fp16
     @unittest.skip("Requires an update of the env running those tests")
-    @require_torch_multi_gpu
+    @require_torch_multi_cuda
     @require_fairscale
     def test_run_seq2seq_fully_sharded_ddp_fp16(self):
         self.run_seq2seq_quick(
@@ -136,7 +136,7 @@ class TestTrainerExt(TestCasePlus):
         )
 
     @require_apex
-    @require_torch_gpu
+    @require_torch_cuda
     def test_run_seq2seq_apex(self):
         # XXX: apex breaks the trainer if it's run twice e.g. run_seq2seq.main() from the same
         # program and it breaks other tests that run from the same pytest worker, therefore until this is
@@ -152,7 +152,7 @@ class TestTrainerExt(TestCasePlus):
         self.run_seq2seq_quick(distributed=True, extra_args_str="--fp16 --fp16_backend=apex")
 
     @parameterized.expand(["base", "low", "high", "mixed"])
-    @require_torch_multi_gpu
+    @require_torch_multi_cuda
     def test_trainer_log_level_replica(self, experiment_id):
         # as each sub-test is slow-ish split into multiple sub-tests to avoid CI timeout
         experiments = {

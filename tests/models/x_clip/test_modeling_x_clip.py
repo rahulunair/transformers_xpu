@@ -24,7 +24,7 @@ import numpy as np
 from huggingface_hub import hf_hub_download
 
 from transformers import XCLIPConfig, XCLIPTextConfig, XCLIPVisionConfig
-from transformers.testing_utils import require_torch, require_torch_multi_gpu, require_vision, slow, torch_device
+from transformers.testing_utils import require_torch, require_torch_multi_cuda, require_vision, slow, torch_device
 from transformers.utils import is_torch_available, is_vision_available
 
 from ...test_configuration_common import ConfigTester
@@ -275,7 +275,7 @@ class XCLIPVisionModelTest(ModelTesterMixin, unittest.TestCase):
                 [self.model_tester.num_attention_heads, encoder_seq_length, encoder_seq_length],
             )
 
-    @require_torch_multi_gpu
+    @require_torch_multi_cuda
     def test_multi_gpu_data_parallel_forward(self):
         config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
 

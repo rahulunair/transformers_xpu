@@ -76,8 +76,8 @@ from transformers.testing_utils import (
     require_accelerate,
     require_safetensors,
     require_torch,
-    require_torch_gpu,
-    require_torch_multi_gpu,
+    require_torch_cuda,
+    require_torch_multi_cuda,
     require_usr_bin_time,
     slow,
     torch_device,
@@ -2300,7 +2300,7 @@ class ModelTesterMixin:
             with torch.no_grad():
                 model(**inputs)[0]
 
-    @require_torch_multi_gpu
+    @require_torch_multi_cuda
     def test_multi_gpu_data_parallel_forward(self):
         config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
 
@@ -2325,7 +2325,7 @@ class ModelTesterMixin:
             with torch.no_grad():
                 _ = model(**self._prepare_for_class(inputs_dict, model_class))
 
-    @require_torch_multi_gpu
+    @require_torch_multi_cuda
     def test_model_parallelization(self):
         if not self.test_model_parallel:
             return
@@ -2387,7 +2387,7 @@ class ModelTesterMixin:
             gc.collect()
             torch.cuda.empty_cache()
 
-    @require_torch_multi_gpu
+    @require_torch_multi_cuda
     def test_model_parallel_equal_results(self):
         if not self.test_model_parallel:
             return
@@ -2421,7 +2421,7 @@ class ModelTesterMixin:
                     for value_, parallel_value_ in zip(value, parallel_value):
                         self.assertTrue(torch.allclose(value_, parallel_value_.to("cpu"), atol=1e-7))
 
-    @require_torch_multi_gpu
+    @require_torch_multi_cuda
     def test_model_parallel_beam_search(self):
         if not self.test_model_parallel:
             return
@@ -2465,7 +2465,7 @@ class ModelTesterMixin:
 
     @require_accelerate
     @mark.accelerate_tests
-    @require_torch_gpu
+    @require_torch_cuda
     def test_disk_offload(self):
         config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
 
@@ -2501,7 +2501,7 @@ class ModelTesterMixin:
 
     @require_accelerate
     @mark.accelerate_tests
-    @require_torch_gpu
+    @require_torch_cuda
     def test_cpu_offload(self):
         config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
 
@@ -2537,7 +2537,7 @@ class ModelTesterMixin:
 
     @require_accelerate
     @mark.accelerate_tests
-    @require_torch_multi_gpu
+    @require_torch_multi_cuda
     def test_model_parallelism(self):
         config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
 
@@ -3231,7 +3231,7 @@ class ModelUtilsTest(TestCasePlus):
 
     @require_accelerate
     @mark.accelerate_tests
-    @require_torch_multi_gpu
+    @require_torch_multi_cuda
     @slow
     def test_model_parallelism_gpt2(self):
         device_map = {"transformer.wte": 0, "transformer.wpe": 0, "lm_head": 0, "transformer.ln_f": 1}
@@ -3249,7 +3249,7 @@ class ModelUtilsTest(TestCasePlus):
 
     @require_accelerate
     @mark.accelerate_tests
-    @require_torch_gpu
+    @require_torch_cuda
     def test_from_pretrained_disk_offload_task_model(self):
         model = AutoModel.from_pretrained("hf-internal-testing/tiny-random-gpt2")
         device_map = {
@@ -3400,7 +3400,7 @@ class ModelUtilsTest(TestCasePlus):
             ):
                 _ = ModelWithHead.from_pretrained(tmp_dir)
 
-    @require_torch_gpu
+    @require_torch_cuda
     @slow
     def test_pretrained_low_mem_new_config(self):
         # Checking for 1 model(the same one which was described in the issue) .

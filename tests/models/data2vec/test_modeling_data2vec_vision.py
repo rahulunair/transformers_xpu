@@ -20,7 +20,7 @@ import unittest
 
 from transformers import Data2VecVisionConfig
 from transformers.models.auto import get_values
-from transformers.testing_utils import require_torch, require_torch_multi_gpu, require_vision, slow, torch_device
+from transformers.testing_utils import require_torch, require_torch_multi_cuda, require_vision, slow, torch_device
 from transformers.utils import cached_property, is_torch_available, is_vision_available
 
 from ...test_configuration_common import ConfigTester
@@ -204,7 +204,7 @@ class Data2VecVisionModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.Te
         # Data2VecVision does not use inputs_embeds
         pass
 
-    @require_torch_multi_gpu
+    @require_torch_multi_cuda
     @unittest.skip(
         reason="Data2VecVision has some layers using `add_module` which doesn't work well with `nn.DataParallel`"
     )

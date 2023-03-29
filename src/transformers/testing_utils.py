@@ -84,7 +84,7 @@ from .utils import (
     is_tokenizers_available,
     is_torch_available,
     is_torch_bf16_cpu_available,
-    is_torch_bf16_gpu_available,
+    is_torch_bf16_cuda_available,
     is_torch_neuroncore_available,
     is_torch_tensorrt_fx_available,
     is_torch_tf32_available,
@@ -485,7 +485,7 @@ def require_decord(test_case):
     return unittest.skipUnless(is_decord_available(), "test requires decord")(test_case)
 
 
-def require_torch_multi_gpu(test_case):
+def require_torch_multi_cuda(test_case):
     """
     Decorator marking a test that requires a multi-GPU setup (in PyTorch). These tests are skipped on a machine without
     multiple GPUs.
@@ -500,7 +500,7 @@ def require_torch_multi_gpu(test_case):
     return unittest.skipUnless(torch.cuda.device_count() > 1, "test requires multiple GPUs")(test_case)
 
 
-def require_torch_non_multi_gpu(test_case):
+def require_torch_non_multi_cuda(test_case):
     """
     Decorator marking a test that requires 0 or 1 GPU setup (in PyTorch).
     """
@@ -512,7 +512,7 @@ def require_torch_non_multi_gpu(test_case):
     return unittest.skipUnless(torch.cuda.device_count() < 2, "test requires 0 or 1 GPU")(test_case)
 
 
-def require_torch_up_to_2_gpus(test_case):
+def require_torch_up_to_2_cudas(test_case):
     """
     Decorator marking a test that requires 0 or 1 or 2 GPU setup (in PyTorch).
     """
@@ -569,15 +569,15 @@ def require_torch_tensorrt_fx(test_case):
     return unittest.skipUnless(is_torch_tensorrt_fx_available(), "test requires Torch-TensorRT FX")(test_case)
 
 
-def require_torch_gpu(test_case):
+def require_torch_cuda(test_case):
     """Decorator marking a test that requires CUDA and PyTorch."""
     return unittest.skipUnless(torch_device == "cuda", "test requires CUDA")(test_case)
 
 
-def require_torch_bf16_gpu(test_case):
+def require_torch_bf16_cuda(test_case):
     """Decorator marking a test that requires torch>=1.10, using Ampere GPU or newer arch with cuda>=11.0"""
     return unittest.skipUnless(
-        is_torch_bf16_gpu_available(),
+        is_torch_bf16_cuda_available(),
         "test requires torch>=1.10, using Ampere GPU or newer arch with cuda>=11.0",
     )(test_case)
 

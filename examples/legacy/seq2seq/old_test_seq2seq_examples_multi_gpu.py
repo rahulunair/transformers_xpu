@@ -17,7 +17,7 @@
 import os
 import sys
 
-from transformers.testing_utils import TestCasePlus, execute_subprocess_async, get_gpu_count, require_torch_gpu, slow
+from transformers.testing_utils import TestCasePlus, execute_subprocess_async, get_gpu_count, require_torch_cuda, slow
 
 from .utils import load_json
 
@@ -28,7 +28,7 @@ class TestSummarizationDistillerMultiGPU(TestCasePlus):
         return cls
 
     @slow
-    @require_torch_gpu
+    @require_torch_cuda
     def test_distributed_eval(self):
         output_dir = self.get_auto_remove_tmp_dir()
         args = f"""

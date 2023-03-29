@@ -39,12 +39,12 @@ from transformers.testing_utils import (
     mockenv_context,
     require_deepspeed,
     require_optuna,
-    require_torch_gpu,
-    require_torch_multi_gpu,
+    require_torch_cuda,
+    require_torch_multi_cuda,
     slow,
 )
 from transformers.trainer_utils import get_last_checkpoint, set_seed
-from transformers.utils import WEIGHTS_NAME, is_torch_bf16_gpu_available
+from transformers.utils import WEIGHTS_NAME, is_torch_bf16_cuda_available
 
 
 if is_torch_available():
@@ -133,7 +133,7 @@ FP16 = "fp16"
 BF16 = "bf16"
 
 stages = [ZERO2, ZERO3]
-if is_torch_bf16_gpu_available():
+if is_torch_bf16_cuda_available():
     dtypes = [FP16, BF16]
 else:
     dtypes = [FP16]
@@ -151,7 +151,7 @@ params = list(itertools.product(stages, dtypes))
 
 
 @require_deepspeed
-@require_torch_gpu
+@require_torch_cuda
 class CoreIntegrationDeepSpeed(TestCasePlus, TrainerIntegrationCommon):
     """
     Testing non-Trainer DeepSpeed integration
@@ -259,7 +259,7 @@ class TrainerIntegrationDeepSpeedWithCustomConfig(TestCasePlus):
 
 
 @require_deepspeed
-@require_torch_gpu
+@require_torch_cuda
 class TrainerIntegrationDeepSpeed(TrainerIntegrationDeepSpeedWithCustomConfig, TrainerIntegrationCommon):
     """
 
@@ -847,7 +847,7 @@ class TrainerIntegrationDeepSpeed(TrainerIntegrationDeepSpeedWithCustomConfig, T
 
 @slow
 @require_deepspeed
-@require_torch_gpu
+@require_torch_cuda
 class TestDeepSpeedWithLauncher(TestCasePlus):
     """This class is for testing via an external script - can do multiple gpus"""
 
@@ -867,7 +867,7 @@ class TestDeepSpeedWithLauncher(TestCasePlus):
     # 2. most tests should probably be run on both: zero2 and zero3 configs
     #
 
-    @require_torch_multi_gpu
+    @require_torch_multi_cuda
     @parameterized.expand(params, name_func=parameterized_custom_name_func)
     def test_basic_distributed(self, stage, dtype):
         self.run_and_check(stage=stage, dtype=dtype, distributed=True)
@@ -898,7 +898,7 @@ class TestDeepSpeedWithLauncher(TestCasePlus):
             fp32=True,
         )
 
-    @require_torch_multi_gpu
+    @require_torch_multi_cuda
     @parameterized.expand(params, name_func=parameterized_custom_name_func)
     def test_fp32_distributed(self, stage, dtype):
         # real model needs too much GPU memory under stage2+fp32, so using tiny random model here -
@@ -939,10 +939,10 @@ class TestDeepSpeedWithLauncher(TestCasePlus):
 
         self.do_checks(output_dir, do_train=do_train, do_eval=do_eval)
 
-    @require_torch_multi_gpu
+    @require_torch_multi_cuda
     @parameterized.expand(["bf16", "fp16", "fp32"])
     def test_inference(self, dtype):
-        if dtype == "bf16" and not is_torch_bf16_gpu_available():
+        if dtype == "bf16" and not is_torch_bf16_cuda_available():
             self.skipTest("test requires bfloat16 hardware support")
 
         # this is just inference, so no optimizer should be loaded

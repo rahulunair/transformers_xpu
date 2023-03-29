@@ -22,7 +22,7 @@ import numpy as np
 
 from tests.test_modeling_common import floats_tensor
 from transformers import OneFormerConfig, is_torch_available, is_vision_available
-from transformers.testing_utils import require_torch, require_torch_multi_gpu, require_vision, slow, torch_device
+from transformers.testing_utils import require_torch, require_torch_multi_cuda, require_vision, slow, torch_device
 from transformers.utils import cached_property
 
 from ...test_configuration_common import ConfigTester
@@ -281,7 +281,7 @@ class OneFormerModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCas
     def test_resize_tokens_embeddings(self):
         pass
 
-    @require_torch_multi_gpu
+    @require_torch_multi_cuda
     @unittest.skip(
         reason="OneFormer has some layers using `add_module` which doesn't work well with `nn.DataParallel`"
     )

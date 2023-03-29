@@ -30,7 +30,7 @@ from transformers.testing_utils import (
     nested_simplify,
     require_tf,
     require_torch,
-    require_torch_gpu,
+    require_torch_cuda,
     slow,
 )
 
@@ -260,7 +260,7 @@ class TokenClassificationPipelineTests(unittest.TestCase):
             ],
         )
 
-    @require_torch_gpu
+    @require_torch_cuda
     @slow
     def test_gpu(self):
         sentence = "This is dummy sentence"

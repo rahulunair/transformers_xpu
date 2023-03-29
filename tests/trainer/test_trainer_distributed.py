@@ -20,7 +20,7 @@ from transformers.testing_utils import (
     TestCasePlus,
     execute_subprocess_async,
     get_torch_dist_unique_port,
-    require_torch_multi_gpu,
+    require_torch_multi_cuda,
     require_torch_neuroncore,
 )
 from transformers.utils import logging
@@ -80,7 +80,7 @@ class TestTrainerDistributedNeuronCore(TestCasePlus):
 
 
 class TestTrainerDistributed(TestCasePlus):
-    @require_torch_multi_gpu
+    @require_torch_multi_cuda
     def test_trainer(self):
         distributed_args = f"""
             -m torch.distributed.launch

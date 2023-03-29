@@ -18,7 +18,7 @@ import unittest
 
 from transformers import NezhaConfig, is_torch_available
 from transformers.models.auto import get_values
-from transformers.testing_utils import require_torch, require_torch_gpu, slow, torch_device
+from transformers.testing_utils import require_torch, require_torch_cuda, slow, torch_device
 
 from ...generation.test_utils import GenerationTesterMixin
 from ...test_configuration_common import ConfigTester
@@ -437,7 +437,7 @@ class NezhaModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMixi
             self.assertIsNotNone(model)
 
     @slow
-    @require_torch_gpu
+    @require_torch_cuda
     def test_torchscript_device_change(self):
         config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
         for model_class in self.all_model_classes:

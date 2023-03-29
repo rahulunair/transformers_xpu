@@ -27,7 +27,7 @@ from transformers.testing_utils import (
     get_gpu_count,
     get_tests_dir,
     require_deepspeed,
-    require_torch_gpu,
+    require_torch_cuda,
     slow,
 )
 from transformers.trainer_utils import set_seed
@@ -306,7 +306,7 @@ stages = [ZERO2, ZERO3]
 #
 # dtypes = [FP16]
 # so just hardcoding --fp16 for now
-# if is_torch_bf16_gpu_available():
+# if is_torch_bf16_cuda_available():
 #     dtypes += [BF16]
 
 
@@ -323,7 +323,7 @@ params = list(itertools.product(stages, task_cmds.keys()))
 
 @slow
 @require_deepspeed
-@require_torch_gpu
+@require_torch_cuda
 class TestDeepSpeedModelZoo(TestCasePlus):
     """This class is for testing via an external script - can do multiple gpus"""
 

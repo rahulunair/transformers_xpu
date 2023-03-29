@@ -11,8 +11,8 @@ from transformers.testing_utils import (
     TestCasePlus,
     execute_subprocess_async,
     require_ray,
-    require_torch_gpu,
-    require_torch_multi_gpu,
+    require_torch_cuda,
+    require_torch_multi_cuda,
 )
 
 
@@ -88,23 +88,23 @@ class RagFinetuneExampleTests(TestCasePlus):
             result = json.load(f)
         return result
 
-    @require_torch_gpu
+    @require_torch_cuda
     def test_finetune_gpu(self):
         result = self._run_finetune(gpus=1)
         self.assertGreaterEqual(result["test"][0]["test_avg_em"], 0.2)
 
-    @require_torch_multi_gpu
+    @require_torch_multi_cuda
     def test_finetune_multigpu(self):
         result = self._run_finetune(gpus=2)
         self.assertGreaterEqual(result["test"][0]["test_avg_em"], 0.2)
 
-    @require_torch_gpu
+    @require_torch_cuda
     @require_ray
     def test_finetune_gpu_ray_retrieval(self):
         result = self._run_finetune(gpus=1, distributed_retriever="ray")
         self.assertGreaterEqual(result["test"][0]["test_avg_em"], 0.2)
 
-    @require_torch_multi_gpu
+    @require_torch_multi_cuda
     @require_ray
     def test_finetune_multigpu_ray_retrieval(self):
         result = self._run_finetune(gpus=1, distributed_retriever="ray")

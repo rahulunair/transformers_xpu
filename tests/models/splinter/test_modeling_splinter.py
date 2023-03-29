@@ -18,7 +18,7 @@ import copy
 import unittest
 
 from transformers import is_torch_available
-from transformers.testing_utils import require_torch, require_torch_multi_gpu, slow, torch_device
+from transformers.testing_utils import require_torch, require_torch_multi_cuda, slow, torch_device
 
 from ...test_configuration_common import ConfigTester
 from ...test_modeling_common import ModelTesterMixin, ids_tensor, random_attention_mask
@@ -325,7 +325,7 @@ class SplinterModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase
     # When the batch is distributed to multiple devices, each replica could get different values for the maximal number
     # of question tokens (see `SplinterForPreTraining._prepare_question_positions()`), and the model returns different
     # shape along dimension 1 (i.e. `num_questions`) that could not be combined into a single tensor as an output.
-    @require_torch_multi_gpu
+    @require_torch_multi_cuda
     def test_multi_gpu_data_parallel_forward(self):
         from torch import nn
 

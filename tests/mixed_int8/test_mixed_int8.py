@@ -32,8 +32,8 @@ from transformers.testing_utils import (
     require_accelerate,
     require_bitsandbytes,
     require_torch,
-    require_torch_gpu,
-    require_torch_multi_gpu,
+    require_torch_cuda,
+    require_torch_multi_cuda,
     slow,
 )
 from transformers.utils.versions import importlib_metadata
@@ -65,7 +65,7 @@ if is_torch_available():
 @require_bitsandbytes
 @require_accelerate
 @require_torch
-@require_torch_gpu
+@require_torch_cuda
 @slow
 class BaseMixedInt8Test(unittest.TestCase):
     # We keep the constants inside the init function and model loading inside setUp function
@@ -223,7 +223,7 @@ class MixedInt8Test(BaseMixedInt8Test):
 @require_bitsandbytes
 @require_accelerate
 @require_torch
-@require_torch_gpu
+@require_torch_cuda
 @slow
 class MixedInt8T5Test(unittest.TestCase):
     @classmethod
@@ -373,7 +373,7 @@ class MixedInt8TestPipeline(BaseMixedInt8Test):
         self.assertEqual(pipeline_output[0]["generated_text"], self.EXPECTED_OUTPUT)
 
 
-@require_torch_multi_gpu
+@require_torch_multi_cuda
 class MixedInt8TestMultiGpu(BaseMixedInt8Test):
     def setUp(self):
         super().setUp()
@@ -400,7 +400,7 @@ class MixedInt8TestMultiGpu(BaseMixedInt8Test):
         self.assertEqual(self.tokenizer.decode(output_parallel[0], skip_special_tokens=True), self.EXPECTED_OUTPUT)
 
 
-@require_torch_multi_gpu
+@require_torch_multi_cuda
 class MixedInt8TestCpuGpu(BaseMixedInt8Test):
     def setUp(self):
         super().setUp()

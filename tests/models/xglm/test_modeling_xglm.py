@@ -18,7 +18,7 @@ import math
 import unittest
 
 from transformers import XGLMConfig, is_torch_available
-from transformers.testing_utils import require_torch, require_torch_gpu, slow, torch_device
+from transformers.testing_utils import require_torch, require_torch_cuda, slow, torch_device
 
 from ...generation.test_utils import GenerationTesterMixin
 from ...test_configuration_common import ConfigTester
@@ -478,7 +478,7 @@ class XGLMModelLanguageGenerationTest(unittest.TestCase):
         duration = datetime.datetime.now() - start
         self.assertGreater(duration, datetime.timedelta(seconds=1.25 * MAX_TIME))
 
-    @require_torch_gpu
+    @require_torch_cuda
     def test_batched_nan_fp16(self):
         model_name = "facebook/xglm-564M"
         tokenizer = XGLMTokenizer.from_pretrained(model_name, use_fast=False, padding_side="left")

@@ -452,10 +452,10 @@ Some tests must be run on CPU-only, others on either CPU or GPU or TPU, yet othe
 decorators are used to set the requirements of tests CPU/GPU/TPU-wise:
 
 - `require_torch` - this test will run only under torch
-- `require_torch_gpu` - as `require_torch` plus requires at least 1 GPU
-- `require_torch_multi_gpu` - as `require_torch` plus requires at least 2 GPUs
-- `require_torch_non_multi_gpu` - as `require_torch` plus requires 0 or 1 GPUs
-- `require_torch_up_to_2_gpus` - as `require_torch` plus requires 0 or 1 or 2 GPUs
+- `require_torch_cuda` - as `require_torch` plus requires at least 1 GPU
+- `require_torch_multi_cuda` - as `require_torch` plus requires at least 2 GPUs
+- `require_torch_non_multi_cuda` - as `require_torch` plus requires 0 or 1 GPUs
+- `require_torch_up_to_2_cudas` - as `require_torch` plus requires 0 or 1 or 2 GPUs
 - `require_torch_tpu` - as `require_torch` plus requires at least 1 TPU
 
 Let's depict the GPU requirements in the following table:
@@ -464,16 +464,16 @@ Let's depict the GPU requirements in the following table:
 | n gpus | decorator                      |
 |--------+--------------------------------|
 | `>= 0` | `@require_torch`               |
-| `>= 1` | `@require_torch_gpu`           |
-| `>= 2` | `@require_torch_multi_gpu`     |
-| `< 2`  | `@require_torch_non_multi_gpu` |
-| `< 3`  | `@require_torch_up_to_2_gpus`  |
+| `>= 1` | `@require_torch_cuda`           |
+| `>= 2` | `@require_torch_multi_cuda`     |
+| `< 2`  | `@require_torch_non_multi_cuda` |
+| `< 3`  | `@require_torch_up_to_2_cudas`  |
 
 
 For example, here is a test that must be run only when there are 2 or more GPUs available and pytorch is installed:
 
 ```python no-style
-@require_torch_multi_gpu
+@require_torch_multi_cuda
 def test_example_with_multi_gpu():
 ```
 
@@ -488,7 +488,7 @@ These decorators can be stacked. For example, if a test is slow and requires at 
 how to set it up:
 
 ```python no-style
-@require_torch_gpu
+@require_torch_cuda
 @slow
 def test_example_slow_on_gpu():
 ```
@@ -498,7 +498,7 @@ last for them to work correctly. Here is an example of the correct usage:
 
 ```python no-style
 @parameterized.expand(...)
-@require_torch_multi_gpu
+@require_torch_multi_cuda
 def test_integration_foo():
 ```
 

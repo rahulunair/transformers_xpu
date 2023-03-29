@@ -33,7 +33,7 @@ from transformers.testing_utils import (
     require_sentencepiece,
     require_tokenizers,
     require_torch,
-    require_torch_non_multi_gpu,
+    require_torch_non_multi_cuda,
     slow,
     torch_device,
 )
@@ -679,7 +679,7 @@ class RagDPRT5Test(RagTestMixin, unittest.TestCase):
 @require_retrieval
 @require_sentencepiece
 @require_tokenizers
-@require_torch_non_multi_gpu
+@require_torch_non_multi_cuda
 class RagModelIntegrationTests(unittest.TestCase):
     def tearDown(self):
         super().tearDown()
