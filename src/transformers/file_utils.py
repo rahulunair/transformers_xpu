@@ -84,6 +84,7 @@ from .utils import (
     is_ftfy_available,
     is_in_notebook,
     is_ipex_available,
+    is_xpu_available,
     is_librosa_available,
     is_offline_mode,
     is_onnx_available,

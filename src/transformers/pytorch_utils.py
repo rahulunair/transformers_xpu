@@ -31,6 +31,7 @@ is_torch_less_than_1_8 = parsed_torch_version_base < version.parse("1.8.0")
 is_torch_less_than_1_9 = parsed_torch_version_base < version.parse("1.9.0")
 is_torch_greater_or_equal_than_1_10 = parsed_torch_version_base >= version.parse("1.10")
 is_torch_less_than_1_11 = parsed_torch_version_base < version.parse("1.11")
+is_torch_greater_or_equal_than_1_13 = parsed_torch_version_base >= version.parse("1.13")
 
 
 def torch_int_div(tensor1, tensor2):
