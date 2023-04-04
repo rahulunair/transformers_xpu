@@ -21,7 +21,7 @@ from transformers.testing_utils import (
     nested_simplify,
     require_tf,
     require_torch,
-    require_torch_gpu,
+    require_torch_cuda,
     slow,
 )
 
@@ -137,7 +137,7 @@ class FillMaskPipelineTests(unittest.TestCase):
             ],
         )
 
-    @require_torch_gpu
+    @require_torch_cuda
     def test_fp16_casting(self):
         pipe = pipeline("fill-mask", model="hf-internal-testing/tiny-random-distilbert", device=0, framework="pt")
 

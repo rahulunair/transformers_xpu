@@ -20,7 +20,7 @@ import unittest
 from typing import Dict, List, Tuple
 
 from transformers import MaskFormerSwinConfig
-from transformers.testing_utils import require_torch, require_torch_multi_gpu, torch_device
+from transformers.testing_utils import require_torch, require_torch_multi_cuda, torch_device
 from transformers.utils import is_torch_available
 
 from ...test_configuration_common import ConfigTester
@@ -183,7 +183,7 @@ class MaskFormerSwinModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.Te
         self.model_tester = MaskFormerSwinModelTester(self)
         self.config_tester = ConfigTester(self, config_class=MaskFormerSwinConfig, embed_dim=37)
 
-    @require_torch_multi_gpu
+    @require_torch_multi_cuda
     @unittest.skip(
         reason=(
             "`MaskFormerSwinModel` outputs `hidden_states_spatial_dimensions` which doesn't work well with"

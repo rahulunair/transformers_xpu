@@ -6,7 +6,7 @@ from pathlib import Path
 
 import torch
 
-from transformers.testing_utils import TestCasePlus, execute_subprocess_async, require_torch_multi_gpu
+from transformers.testing_utils import TestCasePlus, execute_subprocess_async, require_torch_multi_cuda
 from utils import load_json
 
 
@@ -96,7 +96,7 @@ class TestSummarizationDistillerMultiGPU(TestCasePlus):
     def setUpClass(cls):
         return cls
 
-    @require_torch_multi_gpu
+    @require_torch_multi_cuda
     def test_multi_gpu(self):
         updates = {
             "no_teacher": True,

@@ -18,7 +18,7 @@ from run_eval import generate_summaries_or_translations
 from torch import nn
 
 from transformers import AutoConfig, AutoModelForSeq2SeqLM
-from transformers.testing_utils import CaptureStderr, CaptureStdout, TestCasePlus, require_torch_gpu, slow
+from transformers.testing_utils import CaptureStderr, CaptureStdout, TestCasePlus, require_torch_cuda, slow
 from utils import label_smoothed_nll_loss, lmap, load_json
 
 
@@ -126,9 +126,9 @@ class TestSummarizationDistiller(TestCasePlus):
         return cls
 
     @slow
-    @require_torch_gpu
+    @require_torch_cuda
     def test_hub_configs(self):
-        """I put require_torch_gpu cause I only want this to run with self-scheduled."""
+        """I put require_torch_cuda cause I only want this to run with self-scheduled."""
 
         model_list = list_models()
         org = "sshleifer"

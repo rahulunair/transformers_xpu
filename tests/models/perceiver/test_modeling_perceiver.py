@@ -27,7 +27,7 @@ from datasets import load_dataset
 
 from transformers import PerceiverConfig
 from transformers.models.auto import get_values
-from transformers.testing_utils import require_torch, require_torch_multi_gpu, require_vision, slow, torch_device
+from transformers.testing_utils import require_torch, require_torch_multi_cuda, require_vision, slow, torch_device
 from transformers.utils import is_torch_available, is_vision_available
 
 from ...test_configuration_common import ConfigTester
@@ -784,7 +784,7 @@ class PerceiverModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCas
 
                     loss.backward()
 
-    @require_torch_multi_gpu
+    @require_torch_multi_cuda
     @unittest.skip(
         reason=(
             "Perceiver does not work with data parallel (DP) because of a bug in PyTorch:"

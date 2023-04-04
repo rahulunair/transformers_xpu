@@ -307,7 +307,7 @@ def is_torch_cuda_available():
         return False
 
 
-def is_torch_bf16_gpu_available():
+def is_torch_bf16_cuda_available():
     if not is_torch_available():
         return False
 
@@ -318,7 +318,7 @@ def is_torch_bf16_gpu_available():
     # with additional check for torch version
     # to succeed:
     # 1. torch >= 1.10 (1.9 should be enough for AMP API has changed in 1.10, so using 1.10 as minimal)
-    # 2. the hardware needs to support bf16 (GPU arch >= Ampere, or CPU)
+    # 2. the hardware needs to support bf16 (GPU arch >= Ampere, or CPU/XPU)
     # 3. if using gpu, CUDA >= 11
     # 4. torch.autocast exists
     # XXX: one problem here is that it may give invalid results on mixed gpus setup, so it's
@@ -337,6 +337,24 @@ def is_torch_bf16_gpu_available():
         return False
 
     return True
+
+def is_torch_bf16_xpu_available():
+    if not is_torch_available():
+        return False
+
+    import torch
+
+    if is_xpu_available():
+        if version.parse(version.parse(torch.__version__).base_version) < version.parse("1.13"):
+            return False
+        if not hasattr(torch.xpu.amp, "autocast"):
+            return False
+        return True
+    else:
+        return False
+
+    return True
+
 
 
 def is_torch_bf16_cpu_available():
@@ -361,11 +379,11 @@ def is_torch_bf16_available():
     # the original bf16 check was for gpu only, but later a cpu/bf16 combo has emerged so this util
     # has become ambiguous and therefore deprecated
     warnings.warn(
-        "The util is_torch_bf16_available is deprecated, please use is_torch_bf16_gpu_available "
-        "or is_torch_bf16_cpu_available instead according to whether it's used with cpu or gpu",
+        "The util is_torch_bf16_available is deprecated, please use is_torch_bf16_cuda_available "
+        "or is_torch_bf16_cpu_available or is_torch_bf16_xpu_available instead according to whether it's used with cpu or gpu or xpu",
         FutureWarning,
     )
-    return is_torch_bf16_gpu_available()
+    return is_torch_bf16_cuda_available()
 
 
 def is_torch_tf32_available():
@@ -374,6 +392,8 @@ def is_torch_tf32_available():
 
     import torch
 
+    if is_xpu_available() and version.parse(version.parse(torch.__version__).base_version) >= version.parse("1.13"):
+        return True
     if not torch.cuda.is_available() or torch.version.cuda is None:
         return False
     if torch.cuda.get_device_properties(torch.cuda.current_device()).major < 8:
@@ -534,6 +554,19 @@ def is_ipex_available():
         )
         return False
     return True
+
+def is_xpu_available():
+    if not is_torch_available():
+        return False
+    import torch
+
+    if is_ipex_available():
+        if version.parse(version.parse(torch.__version__).base_version) < version.parse("1.13"):
+            return False
+    else:
+        return False
+    import intel_extension_for_pytorch
+    return torch.xpu.is_available()
 
 
 def is_bitsandbytes_available():

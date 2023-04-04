@@ -42,8 +42,8 @@ from transformers.testing_utils import (  # noqa
     get_gpu_count,
     mockenv_context,
     require_deepspeed,
-    require_torch_gpu,
-    require_torch_multi_gpu,
+    require_torch_cuda,
+    require_torch_multi_cuda,
     slow,
 )
 from transformers.trainer_utils import set_seed  # noqa
@@ -71,7 +71,7 @@ params = list(itertools.product(stages, models.keys()))
 
 @slow
 @require_deepspeed
-@require_torch_gpu
+@require_torch_cuda
 class TestDeepSpeedWav2Vec2(TestCasePlus):
     @parameterized.expand(params, name_func=custom_name_func)
     def test_fp32_non_distributed(self, stage, model):
@@ -82,7 +82,7 @@ class TestDeepSpeedWav2Vec2(TestCasePlus):
             fp16=False,
         )
 
-    @require_torch_multi_gpu
+    @require_torch_multi_cuda
     @parameterized.expand(params, name_func=custom_name_func)
     def test_fp32_distributed(self, stage, model):
         self.run_and_check(
@@ -101,7 +101,7 @@ class TestDeepSpeedWav2Vec2(TestCasePlus):
             fp16=True,
         )
 
-    @require_torch_multi_gpu
+    @require_torch_multi_cuda
     @parameterized.expand(params, name_func=custom_name_func)
     def test_fp16_distributed(self, stage, model):
         self.run_and_check(

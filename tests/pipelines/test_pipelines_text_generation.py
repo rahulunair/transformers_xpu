@@ -20,7 +20,7 @@ from transformers.testing_utils import (
     require_accelerate,
     require_tf,
     require_torch,
-    require_torch_gpu,
+    require_torch_cuda,
     require_torch_or_tf,
 )
 
@@ -249,7 +249,7 @@ class TextGenerationPipelineTests(unittest.TestCase):
 
     @require_torch
     @require_accelerate
-    @require_torch_gpu
+    @require_torch_cuda
     def test_small_model_pt_bloom_accelerate(self):
         import torch
 
@@ -308,7 +308,7 @@ class TextGenerationPipelineTests(unittest.TestCase):
         )
 
     @require_torch
-    @require_torch_gpu
+    @require_torch_cuda
     def test_small_model_fp16(self):
         import torch
 
@@ -317,7 +317,7 @@ class TextGenerationPipelineTests(unittest.TestCase):
 
     @require_torch
     @require_accelerate
-    @require_torch_gpu
+    @require_torch_cuda
     def test_pipeline_accelerate_top_p(self):
         import torch
 

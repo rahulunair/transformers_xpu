@@ -52,6 +52,7 @@ from transformers.testing_utils import (
     is_staging_test,
     require_accelerate,
     require_intel_extension_for_pytorch,
+    require_xpu,
     require_optuna,
     require_ray,
     require_sentencepiece,
@@ -59,13 +60,14 @@ from transformers.testing_utils import (
     require_tokenizers,
     require_torch,
     require_torch_bf16_cpu,
-    require_torch_bf16_gpu,
-    require_torch_gpu,
-    require_torch_multi_gpu,
-    require_torch_non_multi_gpu,
+    require_torch_bf16_cuda,
+    require_torch_bf16_xpu,
+    require_torch_cuda,
+    require_torch_multi_cuda,
+    require_torch_non_multi_cuda,
     require_torch_tensorrt_fx,
     require_torch_tf32,
-    require_torch_up_to_2_gpus,
+    require_torch_up_to_2_cudas,
     require_torchdynamo,
     require_wandb,
     slow,
@@ -562,8 +564,8 @@ class TrainerIntegrationPrerunTest(TestCasePlus, TrainerIntegrationCommon):
         self.assertFalse(torch.allclose(trainer.model.b, b))
         self.assertGreater(trainer.optimizer.state_dict()["param_groups"][0]["lr"], 0)
 
-    @require_torch_gpu
-    @require_torch_bf16_gpu
+    @require_torch_cuda
+    @require_torch_bf16_cuda
     def test_mixed_bf16(self):
         # very basic test
         trainer = get_regression_trainer(learning_rate=0.1, bf16=True)
@@ -576,7 +578,7 @@ class TrainerIntegrationPrerunTest(TestCasePlus, TrainerIntegrationCommon):
 
         # will add more specific tests once there are some bugs to fix
 
-    @require_torch_gpu
+    @require_torch_cuda
     @require_torch_tf32
     def test_tf32(self):
         # very basic test
@@ -670,6 +672,30 @@ class TrainerIntegrationTest(TestCasePlus, TrainerIntegrationCommon):
             )
             train_output = trainer.train()
             self.assertEqual(train_output.global_step, 10)
+
+    @require_torch_bf16_xpu
+    @require_xpu
+    def test_number_of_steps_in_training_with_xpu(self):
+        for mix_bf16 in [True, False]:
+            # Regular training has n_epochs * len(train_dl) steps
+            trainer = get_regression_trainer(learning_rate=0.1, use_xpu=True, bf16=mix_bf16, no_cuda=True)
+            train_output = trainer.train()
+            self.assertEqual(train_output.global_step, self.n_epochs * 64 / trainer.args.train_batch_size)
+
+            # Check passing num_train_epochs works (and a float version too):
+            trainer = get_regression_trainer(
+                learning_rate=0.1, num_train_epochs=1.5, use_xpu=True, bf16=mix_bf16, no_cuda=True
+            )
+            train_output = trainer.train()
+            self.assertEqual(train_output.global_step, int(1.5 * 64 / trainer.args.train_batch_size))
+
+            # If we pass a max_steps, num_train_epochs is ignored
+            trainer = get_regression_trainer(
+                learning_rate=0.1, max_steps=10, use_xpu=True, bf16=mix_bf16, no_cuda=True
+            )
+            train_output = trainer.train()
+            self.assertEqual(train_output.global_step, 10)
+
 
     def test_logging_inf_nan_filter(self):
         config = GPT2Config(vocab_size=100, n_positions=128, n_embd=32, n_layer=3, n_head=4)
@@ -795,7 +821,7 @@ class TrainerIntegrationTest(TestCasePlus, TrainerIntegrationCommon):
             ]
             self.assertTrue(any(not torch.equal(sample42_1["input_ids"], sample["input_ids"]) for sample in others))
 
-    @require_torch_multi_gpu
+    @require_torch_multi_cuda
     def test_data_is_not_parallelized_when_model_is_parallel(self):
         model = RegressionModel()
         # Make the Trainer believe it's a parallelized model
@@ -946,6 +972,66 @@ class TrainerIntegrationTest(TestCasePlus, TrainerIntegrationCommon):
             expected_acc = AlmostAccuracy()((pred + 1, y))["accuracy"]
             self.assertAlmostEqual(results["eval_accuracy"], expected_acc)
 
+    @require_torch_bf16_xpu
+    @require_xpu
+    def test_evaluate_with_xpu(self):
+        for bf16_eval in [True, False]:
+            for fp16_eval in [True, False]:
+                if bf16_eval:
+                    fp16_eval = False
+                trainer = get_regression_trainer(
+                    a=1.5, b=2.5, use_xpu=True, compute_metrics=AlmostAccuracy(), bf16_full_eval=bf16_eval, fp16_full_eval=fp16_eval, no_cuda=True
+                )
+                results = trainer.evaluate()
+
+                x, y = trainer.eval_dataset.x, trainer.eval_dataset.ys[0]
+                pred = 1.5 * x + 2.5
+                expected_loss = ((pred - y) ** 2).mean()
+                self.assertAlmostEqual(results["eval_loss"], expected_loss)
+                expected_acc = AlmostAccuracy()((pred, y))["accuracy"]
+                self.assertAlmostEqual(results["eval_accuracy"], expected_acc)
+
+                # With a number of elements not a round multiple of the batch size
+                trainer = get_regression_trainer(
+                    a=1.5,
+                    b=2.5,
+                    use_xpu=True,
+                    eval_len=66,
+                    compute_metrics=AlmostAccuracy(),
+                    bf16_full_eval=bf16_eval,
+                    fp16_full_eval=fp16_eval,
+                    no_cuda=True,
+                )
+                results = trainer.evaluate()
+
+                x, y = trainer.eval_dataset.x, trainer.eval_dataset.ys[0]
+                pred = 1.5 * x + 2.5
+                expected_loss = ((pred - y) ** 2).mean()
+                self.assertAlmostEqual(results["eval_loss"], expected_loss)
+                expected_acc = AlmostAccuracy()((pred, y))["accuracy"]
+                self.assertAlmostEqual(results["eval_accuracy"], expected_acc)
+
+                # With logits preprocess
+                trainer = get_regression_trainer(
+                    a=1.5,
+                    b=2.5,
+                    use_xpu=True,
+                    compute_metrics=AlmostAccuracy(),
+                    preprocess_logits_for_metrics=lambda logits, labels: logits + 1,
+                    bf16_full_eval=bf16_eval,
+                    fp16_full_eval=fp16_eval,
+                    no_cuda=True,
+                )
+                results = trainer.evaluate()
+
+                x, y = trainer.eval_dataset.x, trainer.eval_dataset.ys[0]
+                pred = 1.5 * x + 2.5
+                expected_loss = ((pred - y) ** 2).mean()
+                self.assertAlmostEqual(results["eval_loss"], expected_loss)
+                expected_acc = AlmostAccuracy()((pred + 1, y))["accuracy"]
+                self.assertAlmostEqual(results["eval_accuracy"], expected_acc)
+
+
     def test_predict(self):
         trainer = get_regression_trainer(a=1.5, b=2.5)
         preds = trainer.predict(trainer.eval_dataset).predictions
@@ -1057,6 +1143,59 @@ class TrainerIntegrationTest(TestCasePlus, TrainerIntegrationCommon):
             self.assertTrue(np.array_equal(labels[0], trainer.eval_dataset.ys[0]))
             self.assertTrue(np.array_equal(labels[1], trainer.eval_dataset.ys[1]))
 
+    @require_torch_bf16_xpu
+    @require_xpu
+    def test_predict_with_xpu(self):
+        for bf16_eval in [True, False]:
+            for fp16_eval in [True, False]:
+                if bf16_eval:
+                    fp16_eval = False
+                trainer = get_regression_trainer(a=1.5, b=2.5, use_xpu=True, bf16_full_eval=bf16_eval,
+                                                 fp16_full_eval=fp16_eval, no_cuda=True)
+                preds = trainer.predict(trainer.eval_dataset).predictions
+                x = trainer.eval_dataset.x
+                self.assertTrue(np.allclose(preds, 1.5 * x + 2.5))
+
+                # With a number of elements not a round multiple of the batch size
+                trainer = get_regression_trainer(a=1.5, b=2.5, eval_len=66, use_xpu=True, bf16_full_eval=bf16_eval,
+                                                 fp16_full_eval=fp16_eval, no_cuda=True)
+                preds = trainer.predict(trainer.eval_dataset).predictions
+                x = trainer.eval_dataset.x
+                self.assertTrue(np.allclose(preds, 1.5 * x + 2.5))
+
+                # With more than one output of the model
+                trainer = get_regression_trainer(
+                    a=1.5, b=2.5, double_output=True, use_xpu=True, bf16_full_eval=bf16_eval,
+                    fp16_full_eval=fp16_eval, no_cuda=True
+                )
+                preds = trainer.predict(trainer.eval_dataset).predictions
+                x = trainer.eval_dataset.x
+                self.assertEqual(len(preds), 2)
+                self.assertTrue(np.allclose(preds[0], 1.5 * x + 2.5))
+                self.assertTrue(np.allclose(preds[1], 1.5 * x + 2.5))
+
+                # With more than one output/label of the model
+                trainer = get_regression_trainer(
+                    a=1.5,
+                    b=2.5,
+                    double_output=True,
+                    label_names=["labels", "labels_2"],
+                    use_xpu=True,
+                    bf16_full_eval=bf16_eval,
+                    fp16_full_eval=fp16_eval,
+                    no_cuda=True,
+                )
+                outputs = trainer.predict(trainer.eval_dataset)
+                preds = outputs.predictions
+                labels = outputs.label_ids
+                x = trainer.eval_dataset.x
+                self.assertEqual(len(preds), 2)
+                self.assertTrue(np.allclose(preds[0], 1.5 * x + 2.5))
+                self.assertTrue(np.allclose(preds[1], 1.5 * x + 2.5))
+                self.assertTrue(np.array_equal(labels[0], trainer.eval_dataset.ys[0]))
+                self.assertTrue(np.array_equal(labels[1], trainer.eval_dataset.ys[1]))
+
+
     def test_dynamic_shapes(self):
         eval_dataset = DynamicShapesDataset(batch_size=self.batch_size)
         model = RegressionModel(a=2, b=1)
@@ -1132,7 +1271,7 @@ class TrainerIntegrationTest(TestCasePlus, TrainerIntegrationCommon):
             trainer.train()
             self.check_saved_checkpoints(tmpdir, 5, int(self.n_epochs * 64 / self.batch_size), False)
 
-    @require_torch_multi_gpu
+    @require_torch_multi_cuda
     def test_run_seq2seq_double_train_wrap_once(self):
         # test that we don't wrap the model more than once
         # since wrapping primarily happens on multi-gpu setup we want multiple gpus to test for
@@ -1145,7 +1284,7 @@ class TrainerIntegrationTest(TestCasePlus, TrainerIntegrationCommon):
         model_wrapped_after = trainer.model_wrapped
         self.assertIs(model_wrapped_before, model_wrapped_after, "should be not wrapped twice")
 
-    @require_torch_up_to_2_gpus
+    @require_torch_up_to_2_cudas
     def test_can_resume_training(self):
         # This test will fail for more than 2 GPUs since the batch size will get bigger and with the number of
         # save_steps, the checkpoint will resume training at epoch 2 or more (so the data seen by the model
@@ -1301,7 +1440,7 @@ class TrainerIntegrationTest(TestCasePlus, TrainerIntegrationCommon):
 
     @slow
     @require_accelerate
-    @require_torch_non_multi_gpu
+    @require_torch_non_multi_cuda
     def test_auto_batch_size_finder(self):
         if torch.cuda.is_available():
             torch.backends.cudnn.deterministic = True
@@ -1348,7 +1487,7 @@ class TrainerIntegrationTest(TestCasePlus, TrainerIntegrationCommon):
 
         trainer.train(resume_from_checkpoint=False)
 
-    @require_torch_up_to_2_gpus
+    @require_torch_up_to_2_cudas
     def test_resume_training_with_shard_checkpoint(self):
         # This test will fail for more than 2 GPUs since the batch size will get bigger and with the number of
         # save_steps, the checkpoint will resume training at epoch 2 or more (so the data seen by the model
@@ -1373,7 +1512,7 @@ class TrainerIntegrationTest(TestCasePlus, TrainerIntegrationCommon):
             self.assertEqual(b, b1)
             self.check_trainer_state_are_the_same(state, state1)
 
-    @require_torch_up_to_2_gpus
+    @require_torch_up_to_2_cudas
     def test_resume_training_with_gradient_accumulation(self):
         # This test will fail for more than 2 GPUs since the batch size will get bigger and with the number of
         # save_steps, the checkpoint will resume training at epoch 2 or more (so the data seen by the model
@@ -1411,7 +1550,7 @@ class TrainerIntegrationTest(TestCasePlus, TrainerIntegrationCommon):
             self.assertEqual(b, b1)
             self.check_trainer_state_are_the_same(state, state1)
 
-    @require_torch_up_to_2_gpus
+    @require_torch_up_to_2_cudas
     def test_resume_training_with_frozen_params(self):
         # This test will fail for more than 2 GPUs since the batch size will get bigger and with the number of
         # save_steps, the checkpoint will resume training at epoch 2 or more (so the data seen by the model
@@ -1757,7 +1896,7 @@ class TrainerIntegrationTest(TestCasePlus, TrainerIntegrationCommon):
         trainer = get_regression_trainer(skip_memory_metrics=True)
         self.check_mem_metrics(trainer, self.assertNotIn)
 
-    @require_torch_gpu
+    @require_torch_cuda
     def test_fp16_full_eval(self):
         # this is a sensitive test so let's keep debugging printouts in place for quick diagnosis.
         # it's using pretty large safety margins, but small enough to detect broken functionality.
@@ -1814,7 +1953,7 @@ class TrainerIntegrationTest(TestCasePlus, TrainerIntegrationCommon):
         # perfect world: fp32_init/2 == fp16_eval
         self.assertAlmostEqual(fp16_eval, fp32_init / 2, delta=5_000)
 
-    @require_torch_non_multi_gpu
+    @require_torch_non_multi_cuda
     @require_torchdynamo
     @require_torch_tensorrt_fx
     def test_torchdynamo_full_eval(self):
@@ -1856,7 +1995,7 @@ class TrainerIntegrationTest(TestCasePlus, TrainerIntegrationCommon):
         torchdynamo.reset()
 
     @unittest.skip("torch 2.0.0 gives `ModuleNotFoundError: No module named 'torchdynamo'`.")
-    @require_torch_non_multi_gpu
+    @require_torch_non_multi_cuda
     @require_torchdynamo
     def test_torchdynamo_memory(self):
         # torchdynamo at the moment doesn't support DP/DDP, therefore require a single gpu
@@ -1927,8 +2066,8 @@ class TrainerIntegrationTest(TestCasePlus, TrainerIntegrationCommon):
         # aggressively fuses the operations and reduce the memory footprint.
         self.assertGreater(orig_peak_mem, peak_mem * 2)
 
-    @require_torch_gpu
-    @require_torch_bf16_gpu
+    @require_torch_cuda
+    @require_torch_bf16_cuda
     def test_bf16_full_eval(self):
         # note: most of the logic is the same as test_fp16_full_eval
 

@@ -18,7 +18,7 @@ import random
 import unittest
 
 from transformers import TransfoXLConfig, is_torch_available
-from transformers.testing_utils import require_torch, require_torch_multi_gpu, slow, torch_device
+from transformers.testing_utils import require_torch, require_torch_multi_cuda, slow, torch_device
 
 from ...generation.test_utils import GenerationTesterMixin
 from ...test_configuration_common import ConfigTester
@@ -339,7 +339,7 @@ class TransfoXLModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTester
         # xlnet cannot keep gradients in attentions or hidden states
         return
 
-    @require_torch_multi_gpu
+    @require_torch_multi_cuda
     def test_multi_gpu_data_parallel_forward(self):
         # Opt-out of this test.
         pass
