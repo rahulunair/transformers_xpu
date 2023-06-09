@@ -23,7 +23,10 @@ import os
 import sys
 from dataclasses import dataclass, field
 from typing import Optional
+import torch
+import intel_extension_for_pytorch
 
+print(f"xpu device found: {torch.xpu.is_device_available()}")
 import datasets
 import evaluate
 from datasets import load_dataset
@@ -47,6 +50,20 @@ from transformers.trainer_utils import get_last_checkpoint
 from transformers.utils import check_min_version, send_example_telemetry
 from transformers.utils.versions import require_version
 
+def enumerate_devices():
+    if torch.cuda.is_available():
+        return [torch.device(f'cuda:{i}') for i in range(torch.cuda.device_count())]
+    else:
+        try:
+            import intel_extension_for_pytorch as ipex
+            if torch.xpu.is_available():
+                # Note: replace the following line with the actual method to get XPU device count
+                xpu_device_count = get_xpu_device_count() 
+                return [torch.device(f'xpu:{i}') for i in range(xpu_device_count)]
+        except ImportError:
+            pass
+        return [torch.device('cpu')]
+ print(f"devices found: {enumerate_devices()}")
 
 # Will error if the minimal version of Transformers is not installed. Remove at your own risks.
 check_min_version("4.28.0.dev0")
